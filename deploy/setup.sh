@@ -16,9 +16,9 @@ sudo apt-get install -y nodejs
 sudo mkdir -p /opt/hyperliquid-backtest
 sudo chown $USER:$USER /opt/hyperliquid-backtest
 
-# Clone repositories
+# Clone repository
 cd /opt/hyperliquid-backtest
-git clone YOUR_REPO_URL .
+git clone https://github.com/hochangjun/hyperliquid-leaderboard-backtest.git .
 
 # Set up Python environment
 python3.11 -m venv venv

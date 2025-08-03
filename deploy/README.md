@@ -15,32 +15,25 @@
 2. **SSH into your droplet and run:**
 ```bash
 # Download setup script
-wget https://raw.githubusercontent.com/YOUR_REPO/main/deploy/setup.sh
+wget https://raw.githubusercontent.com/hochangjun/hyperliquid-leaderboard-backtest/main/deploy/setup.sh
 chmod +x setup.sh
-
-# Edit to add your repo URL
-nano setup.sh
 
 # Run setup
 ./setup.sh
 ```
 
-3. **Configure services:**
+3. **Configure and start services:**
 ```bash
-# Edit service files to set your username
-sudo nano /etc/systemd/system/hyperliquid-leaderboard.service
-sudo nano /etc/systemd/system/hyperliquid-backtest.service
-
 # Create log directory
 sudo mkdir -p /opt/hyperliquid-backtest/logs
 sudo chown -R $USER:$USER /opt/hyperliquid-backtest/logs
 
-# Enable and start services
-sudo systemctl enable hyperliquid-leaderboard
-sudo systemctl enable hyperliquid-backtest
-sudo systemctl start hyperliquid-leaderboard
+# Enable and start services (services will run as your user)
+sudo systemctl enable hyperliquid-leaderboard@$USER
+sudo systemctl enable hyperliquid-backtest@$USER
+sudo systemctl start hyperliquid-leaderboard@$USER
 sleep 10  # Wait for API to start
-sudo systemctl start hyperliquid-backtest
+sudo systemctl start hyperliquid-backtest@$USER
 ```
 
 4. **Set up automated backups:**

@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=YOUR_USER
+User=%i
 WorkingDirectory=/opt/hyperliquid-backtest/hyperliquid-leaderboard
 ExecStart=/usr/bin/npm start
 Restart=always

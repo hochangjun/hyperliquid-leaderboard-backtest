@@ -5,7 +5,7 @@ Requires=hyperliquid-leaderboard.service
 
 [Service]
 Type=simple
-User=YOUR_USER
+User=%i
 WorkingDirectory=/opt/hyperliquid-backtest
 Environment="PATH=/opt/hyperliquid-backtest/venv/bin"
 ExecStart=/opt/hyperliquid-backtest/venv/bin/python /opt/hyperliquid-backtest/backtest.py 720
