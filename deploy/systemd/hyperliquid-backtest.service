@@ -1,0 +1,23 @@
+[Unit]
+Description=Hyperliquid Backtest Data Collection
+After=network.target hyperliquid-leaderboard.service
+Requires=hyperliquid-leaderboard.service
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/opt/hyperliquid-backtest
+Environment="PATH=/opt/hyperliquid-backtest/venv/bin"
+ExecStart=/opt/hyperliquid-backtest/venv/bin/python /opt/hyperliquid-backtest/backtest.py 720
+Restart=always
+RestartSec=30
+StandardOutput=append:/opt/hyperliquid-backtest/logs/backtest.log
+StandardError=append:/opt/hyperliquid-backtest/logs/backtest-error.log
+
+# Restart conditions
+RestartPreventExitStatus=0
+StartLimitInterval=600
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

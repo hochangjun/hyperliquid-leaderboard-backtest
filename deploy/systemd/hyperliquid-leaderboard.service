@@ -1,0 +1,16 @@
+[Unit]
+Description=Hyperliquid Leaderboard API Service
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/opt/hyperliquid-backtest/hyperliquid-leaderboard
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/hyperliquid-backtest/logs/leaderboard.log
+StandardError=append:/opt/hyperliquid-backtest/logs/leaderboard-error.log
+
+[Install]
+WantedBy=multi-user.target
