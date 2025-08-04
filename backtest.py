@@ -71,20 +71,31 @@ class HyperliquidBacktest:
             positions = await asyncio.gather(*tasks)
             return positions
     
-    def aggregate_positions(self, positions: List[Dict]) -> Dict[str, Dict]:
-        """Aggregate positions by asset (BTC, ETH)"""
-        aggregated = defaultdict(lambda: {"long": 0, "short": 0, "net": 0, "count": 0})
+    def aggregate_positions(self, positions: List[Dict], prices: Dict[str, float]) -> Dict[str, Dict]:
+        """Aggregate positions by asset (BTC, ETH) in both token and USD values"""
+        aggregated = defaultdict(lambda: {
+            "long_tokens": 0, "short_tokens": 0, "net_tokens": 0,
+            "long_usd": 0, "short_usd": 0, "net_usd": 0,
+            "count": 0
+        })
         
         for trader_data in positions:
             for position in trader_data["positions"]:
                 asset = position["position"]["coin"]
-                if asset in ["BTC", "ETH"]:
+                if asset in ["BTC", "ETH"] and asset in prices:
                     size = float(position["position"]["szi"])
+                    price = prices[asset]
+                    usd_value = abs(size) * price
+                    
                     if size > 0:
-                        aggregated[asset]["long"] += size
+                        aggregated[asset]["long_tokens"] += size
+                        aggregated[asset]["long_usd"] += usd_value
                     else:
-                        aggregated[asset]["short"] += abs(size)
-                    aggregated[asset]["net"] += size
+                        aggregated[asset]["short_tokens"] += abs(size)
+                        aggregated[asset]["short_usd"] += usd_value
+                    
+                    aggregated[asset]["net_tokens"] += size
+                    aggregated[asset]["net_usd"] = aggregated[asset]["long_usd"] - aggregated[asset]["short_usd"]
                     aggregated[asset]["count"] += 1
         
         return dict(aggregated)
@@ -99,13 +110,12 @@ class HyperliquidBacktest:
             response = requests.post(self.hyperliquid_api, json=payload)
             data = response.json()
             
-            for asset in data[0]["universe"]:
+            # Find the coin in the universe array
+            for i, asset in enumerate(data[0]["universe"]):
                 if asset["name"] == coin:
-                    ctx_idx = asset["szDecimals"]
-                    # Find the corresponding asset context
-                    for i, ctx in enumerate(data[1]):
-                        if i == ctx_idx:
-                            return float(ctx["markPx"])
+                    # Use the same index to get the price from contexts
+                    if i < len(data[1]):
+                        return float(data[1][i]["markPx"])
             return 0.0
         except Exception as e:
             print(f"Error fetching price for {coin}: {e}")
@@ -113,20 +123,27 @@ class HyperliquidBacktest:
     
     async def collect_data_point(self, traders: List[str]) -> Dict:
         """Collect one data point: positions and prices"""
-        # Get all positions
-        positions = await self.get_all_positions(traders)
-        aggregated = self.aggregate_positions(positions)
-        
-        # Get prices
+        # Get prices first
         btc_price = await self.get_price_data("BTC")
         eth_price = await self.get_price_data("ETH")
+        prices = {"BTC": btc_price, "ETH": eth_price}
+        
+        # Get all positions
+        positions = await self.get_all_positions(traders)
+        aggregated = self.aggregate_positions(positions, prices)
         
         data_point = {
             "timestamp": datetime.now(),
             "btc_price": btc_price,
             "eth_price": eth_price,
-            "btc_positions": aggregated.get("BTC", {"long": 0, "short": 0, "net": 0, "count": 0}),
-            "eth_positions": aggregated.get("ETH", {"long": 0, "short": 0, "net": 0, "count": 0})
+            "btc_positions": aggregated.get("BTC", {
+                "long_tokens": 0, "short_tokens": 0, "net_tokens": 0,
+                "long_usd": 0, "short_usd": 0, "net_usd": 0, "count": 0
+            }),
+            "eth_positions": aggregated.get("ETH", {
+                "long_tokens": 0, "short_tokens": 0, "net_tokens": 0,
+                "long_usd": 0, "short_usd": 0, "net_usd": 0, "count": 0
+            })
         }
         
         return data_point
@@ -157,9 +174,9 @@ class HyperliquidBacktest:
                 # Print current status
                 print(f"Timestamp: {data_point['timestamp']}")
                 print(f"BTC Price: ${data_point['btc_price']:,.2f}")
-                print(f"BTC Net Position: {data_point['btc_positions']['net']:.4f}")
+                print(f"BTC Net Position: ${data_point['btc_positions']['net_usd']:,.2f} ({data_point['btc_positions']['net_tokens']:.4f} BTC)")
                 print(f"ETH Price: ${data_point['eth_price']:,.2f}")
-                print(f"ETH Net Position: {data_point['eth_positions']['net']:.4f}")
+                print(f"ETH Net Position: ${data_point['eth_positions']['net_usd']:,.2f} ({data_point['eth_positions']['net_tokens']:.4f} ETH)")
                 
                 # Save incrementally every 12 data points (1 hour at 5-min intervals)
                 if (i + 1) % 12 == 0:
@@ -214,12 +231,14 @@ class HyperliquidBacktest:
                 'timestamp': pd.to_datetime(dp['timestamp']),
                 'btc_price': dp['btc_price'],
                 'eth_price': dp['eth_price'],
-                'btc_net_position': dp['btc_positions']['net'],
-                'eth_net_position': dp['eth_positions']['net'],
-                'btc_long': dp['btc_positions']['long'],
-                'btc_short': dp['btc_positions']['short'],
-                'eth_long': dp['eth_positions']['long'],
-                'eth_short': dp['eth_positions']['short']
+                'btc_net_position_usd': dp['btc_positions']['net_usd'],
+                'eth_net_position_usd': dp['eth_positions']['net_usd'],
+                'btc_net_position_tokens': dp['btc_positions']['net_tokens'],
+                'eth_net_position_tokens': dp['eth_positions']['net_tokens'],
+                'btc_long_usd': dp['btc_positions']['long_usd'],
+                'btc_short_usd': dp['btc_positions']['short_usd'],
+                'eth_long_usd': dp['eth_positions']['long_usd'],
+                'eth_short_usd': dp['eth_positions']['short_usd']
             })
         
         df = pd.DataFrame(df_data)
@@ -229,9 +248,9 @@ class HyperliquidBacktest:
         df['btc_price_change'] = df['btc_price'].pct_change()
         df['eth_price_change'] = df['eth_price'].pct_change()
         
-        # Calculate position changes
-        df['btc_position_change'] = df['btc_net_position'].diff()
-        df['eth_position_change'] = df['eth_net_position'].diff()
+        # Calculate position changes (using USD values)
+        df['btc_position_change_usd'] = df['btc_net_position_usd'].diff()
+        df['eth_position_change_usd'] = df['eth_net_position_usd'].diff()
         
         # Create visualizations
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
@@ -240,11 +259,11 @@ class HyperliquidBacktest:
         ax1 = axes[0, 0]
         ax1_twin = ax1.twinx()
         ax1.plot(df.index, df['btc_price'], 'b-', label='BTC Price')
-        ax1_twin.plot(df.index, df['btc_net_position'], 'r-', label='Net Position')
+        ax1_twin.plot(df.index, df['btc_net_position_usd'] / 1_000_000, 'r-', label='Net Position (USD)')
         ax1.set_xlabel('Time')
         ax1.set_ylabel('BTC Price ($)', color='b')
-        ax1_twin.set_ylabel('Net Position', color='r')
-        ax1.set_title('BTC Price vs Top 100 Traders Net Position')
+        ax1_twin.set_ylabel('Net Position ($M)', color='r')
+        ax1.set_title('BTC Price vs Top 100 Traders Net Position (USD)')
         ax1.tick_params(axis='y', labelcolor='b')
         ax1_twin.tick_params(axis='y', labelcolor='r')
         
@@ -252,18 +271,18 @@ class HyperliquidBacktest:
         ax2 = axes[0, 1]
         ax2_twin = ax2.twinx()
         ax2.plot(df.index, df['eth_price'], 'b-', label='ETH Price')
-        ax2_twin.plot(df.index, df['eth_net_position'], 'r-', label='Net Position')
+        ax2_twin.plot(df.index, df['eth_net_position_usd'] / 1_000_000, 'r-', label='Net Position (USD)')
         ax2.set_xlabel('Time')
         ax2.set_ylabel('ETH Price ($)', color='b')
-        ax2_twin.set_ylabel('Net Position', color='r')
-        ax2.set_title('ETH Price vs Top 100 Traders Net Position')
+        ax2_twin.set_ylabel('Net Position ($M)', color='r')
+        ax2.set_title('ETH Price vs Top 100 Traders Net Position (USD)')
         ax2.tick_params(axis='y', labelcolor='b')
         ax2_twin.tick_params(axis='y', labelcolor='r')
         
         # Correlation Analysis
         # Remove NaN values for correlation calculation
-        btc_corr_data = df[['btc_price_change', 'btc_position_change']].dropna()
-        eth_corr_data = df[['eth_price_change', 'eth_position_change']].dropna()
+        btc_corr_data = df[['btc_price_change', 'btc_position_change_usd']].dropna()
+        eth_corr_data = df[['eth_price_change', 'eth_position_change_usd']].dropna()
         
         if len(btc_corr_data) > 2:
             btc_correlation = btc_corr_data.corr().iloc[0, 1]
@@ -271,14 +290,14 @@ class HyperliquidBacktest:
             
             # Scatter plots
             ax3 = axes[1, 0]
-            ax3.scatter(btc_corr_data['btc_position_change'], btc_corr_data['btc_price_change'])
-            ax3.set_xlabel('Position Change')
+            ax3.scatter(btc_corr_data['btc_position_change_usd'] / 1_000_000, btc_corr_data['btc_price_change'] * 100)
+            ax3.set_xlabel('Position Change ($M)')
             ax3.set_ylabel('Price Change %')
             ax3.set_title(f'BTC Position Change vs Price Change\nCorrelation: {btc_correlation:.3f}')
             
             ax4 = axes[1, 1]
-            ax4.scatter(eth_corr_data['eth_position_change'], eth_corr_data['eth_price_change'])
-            ax4.set_xlabel('Position Change')
+            ax4.scatter(eth_corr_data['eth_position_change_usd'] / 1_000_000, eth_corr_data['eth_price_change'] * 100)
+            ax4.set_xlabel('Position Change ($M)')
             ax4.set_ylabel('Price Change %')
             ax4.set_title(f'ETH Position Change vs Price Change\nCorrelation: {eth_correlation:.3f}')
             
@@ -289,11 +308,13 @@ class HyperliquidBacktest:
             print(f"\nBTC Analysis:")
             print(f"  Price change: {(df['btc_price'].iloc[-1] / df['btc_price'].iloc[0] - 1) * 100:.2f}%")
             print(f"  Position correlation with price change: {btc_correlation:.3f}")
-            print(f"  Average net position: {df['btc_net_position'].mean():.4f}")
+            print(f"  Average net position (USD): ${df['btc_net_position_usd'].mean():,.2f}")
+            print(f"  Average net position (tokens): {df['btc_net_position_tokens'].mean():.4f} BTC")
             print(f"\nETH Analysis:")
             print(f"  Price change: {(df['eth_price'].iloc[-1] / df['eth_price'].iloc[0] - 1) * 100:.2f}%")
             print(f"  Position correlation with price change: {eth_correlation:.3f}")
-            print(f"  Average net position: {df['eth_net_position'].mean():.4f}")
+            print(f"  Average net position (USD): ${df['eth_net_position_usd'].mean():,.2f}")
+            print(f"  Average net position (tokens): {df['eth_net_position_tokens'].mean():.4f} ETH")
         
         plt.tight_layout()
         plt.savefig(f"backtest_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
