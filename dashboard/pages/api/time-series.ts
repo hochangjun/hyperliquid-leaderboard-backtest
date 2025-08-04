@@ -10,7 +10,7 @@ export default async function handler(
 
   try {
     // Fetch data from your Digital Ocean backend
-    const backendUrl = process.env.BACKEND_URL || 'YOUR_DIGITAL_OCEAN_IP';
+    const backendUrl = process.env.BACKEND_URL;
     
     // For now, we'll fetch from a JSON file or database
     // In production, this would connect to your PostgreSQL database

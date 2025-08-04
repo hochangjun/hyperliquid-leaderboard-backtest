@@ -9,34 +9,21 @@ export default async function handler(
   }
 
   try {
-    // This would fetch from your backend or database
-    const backendUrl = process.env.BACKEND_URL || 'YOUR_DIGITAL_OCEAN_IP';
+    // Fetch from your backend
+    const backendUrl = process.env.BACKEND_URL;
     
-    // For now, return current net positions
-    const mockData = [
-      {
-        asset: 'BTC',
-        long_usd: 85000000,
-        short_usd: 50000000,
-        net_usd: 35000000,
-        long_tokens: 742.5,
-        short_tokens: 437.2,
-        net_tokens: 305.3,
-        trader_count: 67
-      },
-      {
-        asset: 'ETH',
-        long_usd: 45000000,
-        short_usd: 240000000,
-        net_usd: -195000000,
-        long_tokens: 12676,
-        short_tokens: 67589,
-        net_tokens: -54913,
-        trader_count: 89
-      }
-    ];
-
-    res.status(200).json(mockData);
+    if (!backendUrl) {
+      throw new Error('BACKEND_URL not configured');
+    }
+    
+    const response = await fetch(`${backendUrl}/api/net-positions`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch net positions');
+    }
+    
+    const data = await response.json();
+    res.status(200).json(data);
   } catch (error) {
     console.error('Error fetching net positions:', error);
     res.status(500).json({ message: 'Internal server error' });
