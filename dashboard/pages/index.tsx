@@ -107,62 +107,92 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Time Series Chart */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Price vs Net Positions Over Time</h2>
-          <div className="h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timeSeriesData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="timestamp" 
-                  tickFormatter={(value) => format(new Date(value), 'HH:mm')}
-                  stroke="#9CA3AF"
-                />
-                <YAxis yAxisId="price" orientation="left" stroke="#9CA3AF" />
-                <YAxis yAxisId="position" orientation="right" stroke="#9CA3AF" />
-                <Tooltip 
-                  labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm')}
-                  formatter={(value: any, name: string) => {
-                    if (name.includes('price')) return [formatCurrency(value), name];
-                    return [formatMillion(value), name];
-                  }}
-                />
-                <Legend />
-                <Line 
-                  yAxisId="price" 
-                  type="monotone" 
-                  dataKey="btc_price" 
-                  stroke="#F59E0B" 
-                  name="BTC Price"
-                  strokeWidth={2}
-                />
-                <Line 
-                  yAxisId="price" 
-                  type="monotone" 
-                  dataKey="eth_price" 
-                  stroke="#8B5CF6" 
-                  name="ETH Price"
-                  strokeWidth={2}
-                />
-                <Line 
-                  yAxisId="position" 
-                  type="monotone" 
-                  dataKey="btc_net_position_usd" 
-                  stroke="#10B981" 
-                  name="BTC Net Position"
-                  strokeWidth={2}
-                />
-                <Line 
-                  yAxisId="position" 
-                  type="monotone" 
-                  dataKey="eth_net_position_usd" 
-                  stroke="#EF4444" 
-                  name="ETH Net Position"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+        {/* Time Series Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* BTC Chart */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">BTC: Price vs Net Positions</h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timeSeriesData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis 
+                    dataKey="timestamp" 
+                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    stroke="#9CA3AF"
+                  />
+                  <YAxis yAxisId="price" orientation="left" stroke="#F59E0B" />
+                  <YAxis yAxisId="position" orientation="right" stroke="#10B981" />
+                  <Tooltip 
+                    labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm')}
+                    formatter={(value: any, name: string) => {
+                      if (name.includes('BTC Price')) return [formatCurrency(value), name];
+                      return [formatMillion(value), name];
+                    }}
+                  />
+                  <Legend />
+                  <Line 
+                    yAxisId="price" 
+                    type="monotone" 
+                    dataKey="btc_price" 
+                    stroke="#F59E0B" 
+                    name="BTC Price"
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    yAxisId="position" 
+                    type="monotone" 
+                    dataKey="btc_net_position_usd" 
+                    stroke="#10B981" 
+                    name="BTC Net Position"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* ETH Chart */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">ETH: Price vs Net Positions</h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timeSeriesData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis 
+                    dataKey="timestamp" 
+                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    stroke="#9CA3AF"
+                  />
+                  <YAxis yAxisId="price" orientation="left" stroke="#8B5CF6" />
+                  <YAxis yAxisId="position" orientation="right" stroke="#EF4444" />
+                  <Tooltip 
+                    labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm')}
+                    formatter={(value: any, name: string) => {
+                      if (name.includes('ETH Price')) return [formatCurrency(value), name];
+                      return [formatMillion(value), name];
+                    }}
+                  />
+                  <Legend />
+                  <Line 
+                    yAxisId="price" 
+                    type="monotone" 
+                    dataKey="eth_price" 
+                    stroke="#8B5CF6" 
+                    name="ETH Price"
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    yAxisId="position" 
+                    type="monotone" 
+                    dataKey="eth_net_position_usd" 
+                    stroke="#EF4444" 
+                    name="ETH Net Position"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 

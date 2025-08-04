@@ -114,23 +114,25 @@ def get_traders():
         leaderboard_data = leaderboard_response.json()
         traders = []
         
-        # For now, we'll return basic leaderboard data
-        # In a full implementation, you'd fetch each trader's current positions
+        # Filter for traders with positive all-time PNL only
         for trader in leaderboard_data.get('leaderboardRows', []):
             alltime_stats = next((w[1] for w in trader['windowPerformances'] if w[0] == 'allTime'), {})
+            pnl_alltime = float(alltime_stats.get('pnl', 0))
             
-            traders.append({
-                'ethAddress': trader['ethAddress'],
-                'displayName': trader.get('displayName'),
-                'pnl_alltime': float(alltime_stats.get('pnl', 0)),
-                'roi_alltime': float(alltime_stats.get('roi', 0)),
-                'account_value': float(trader.get('accountValue', 0)),
-                # These would be fetched from individual position queries in production
-                'btc_position': None,  # Would need individual API calls
-                'eth_position': None,
-                'btc_position_usd': None,
-                'eth_position_usd': None,
-            })
+            # Only include traders with positive PNL
+            if pnl_alltime > 0:
+                traders.append({
+                    'ethAddress': trader['ethAddress'],
+                    'displayName': trader.get('displayName'),
+                    'pnl_alltime': pnl_alltime,
+                    'roi_alltime': float(alltime_stats.get('roi', 0)),
+                    'account_value': float(trader.get('accountValue', 0)),
+                    # These would be fetched from individual position queries in production
+                    'btc_position': None,  # Would need individual API calls
+                    'eth_position': None,
+                    'btc_position_usd': None,
+                    'eth_position_usd': None,
+                })
         
         return jsonify(traders)
         
