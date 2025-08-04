@@ -151,8 +151,9 @@ class HyperliquidBacktest:
     async def run_backtest(self, duration_hours: int = 24, interval_minutes: int = 5):
         """Run the backtest for specified duration"""
         print(f"Starting backtest for {duration_hours} hours with {interval_minutes} minute intervals")
+        print("Top 100 traders will be refreshed every hour to include new top performers")
         
-        # Get top traders
+        # Get initial top traders
         traders = await self.get_top_traders(100)
         if not traders:
             print("Failed to get traders. Make sure the leaderboard API is running.")
@@ -167,8 +168,38 @@ class HyperliquidBacktest:
         for i in range(iterations):
             print(f"\nCollecting data point {i+1}/{iterations}")
             
+            # Refresh top 100 traders every hour (every 12 iterations at 5-min intervals)
+            if i % 12 == 0 and i > 0:
+                print("🔄 Refreshing top 100 traders list...")
+                new_traders = await self.get_top_traders(100)
+                if new_traders:
+                    # Compare with previous list
+                    new_addresses = set(new_traders)
+                    old_addresses = set(traders)
+                    added = new_addresses - old_addresses
+                    removed = old_addresses - new_addresses
+                    
+                    if added or removed:
+                        print(f"   📈 New traders in top 100: {len(added)}")
+                        print(f"   📉 Traders dropped from top 100: {len(removed)}")
+                        if added:
+                            print(f"   ➕ Added: {list(added)[:3]}{'...' if len(added) > 3 else ''}")
+                        if removed:
+                            print(f"   ➖ Removed: {list(removed)[:3]}{'...' if len(removed) > 3 else ''}")
+                    else:
+                        print("   ✓ Top 100 list unchanged")
+                    
+                    traders = new_traders
+                else:
+                    print("   ⚠️ Failed to refresh traders, using previous list")
+            
             try:
                 data_point = await self.collect_data_point(traders)
+                
+                # Add metadata about trader list
+                data_point['trader_list_updated_at'] = i // 12  # Which hour the list was last updated
+                data_point['iteration'] = i + 1
+                
                 data_points.append(data_point)
                 
                 # Print current status

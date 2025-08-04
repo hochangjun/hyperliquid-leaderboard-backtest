@@ -1,0 +1,18 @@
+[Unit]
+Description=Hyperliquid Tracker API Server
+After=network.target hyperliquid-leaderboard.service
+Requires=hyperliquid-leaderboard.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/hyperliquid-backtest
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/hyperliquid-backtest/venv/bin/python /opt/hyperliquid-backtest/api_server.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/hyperliquid-backtest/logs/api-server.log
+StandardError=append:/opt/hyperliquid-backtest/logs/api-server-error.log
+
+[Install]
+WantedBy=multi-user.target

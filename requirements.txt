@@ -4,3 +4,5 @@ numpy
 matplotlib
 seaborn
 aiohttp
+flask
+flask-cors
