@@ -5,9 +5,18 @@ __pycache__/
 *.pyd
 .Python
 *.db
-*.json
 *.csv
 *.png
-backtest_data_*
-backtest_processed_*
-backtest_analysis_*
+
+# Backtest output files
+backtest_data_*.json
+backtest_processed_*.csv
+backtest_analysis_*.png
+backtest_data_current.json
+
+# But keep config files
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!nest-cli.json
