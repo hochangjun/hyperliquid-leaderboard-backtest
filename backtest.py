@@ -18,19 +18,22 @@ class HyperliquidBacktest:
         self.positions_data = []
         self.price_data = []
         
-    async def get_top_traders(self, limit: int = 100) -> List[str]:
-        """Get top 100 traders by PNL from the leaderboard"""
-        payload = {
-            "limit": limit,
-            "offset": 0,
-            "sort": {
-                "timePeriod": "allTime",
-                "type": "pnl",
-                "direction": "desc"
-            }
-        }
-        
+    async def get_top_traders_with_positions(self, target_count: int = 100) -> List[str]:
+        """Get top traders by PNL who have at least one open position"""
         try:
+            # Start with more traders than we need since some might be inactive
+            fetch_limit = min(target_count * 3, 500)  # Fetch up to 3x more to filter from
+            
+            payload = {
+                "limit": fetch_limit,
+                "offset": 0,
+                "sort": {
+                    "timePeriod": "allTime",
+                    "type": "pnl",
+                    "direction": "desc"
+                }
+            }
+            
             response = requests.post(self.leaderboard_api, json=payload)
             data = response.json()
             
@@ -38,11 +41,43 @@ class HyperliquidBacktest:
                 print(f"Error fetching leaderboard: {data['error']}")
                 return []
             
-            traders = [row["ethAddress"] for row in data["leaderboardRows"]]
-            print(f"Fetched {len(traders)} top traders")
-            return traders[:limit]
+            all_traders = [row["ethAddress"] for row in data["leaderboardRows"]]
+            print(f"Fetched {len(all_traders)} traders from leaderboard, filtering for active positions...")
+            
+            # Check each trader for active positions
+            active_traders = []
+            
+            async with aiohttp.ClientSession() as session:
+                for i, trader in enumerate(all_traders):
+                    if len(active_traders) >= target_count:
+                        break
+                        
+                    try:
+                        positions = await self.get_user_positions(session, trader)
+                        
+                        # Check if trader has any open positions
+                        has_positions = False
+                        for position in positions.get("positions", []):
+                            if float(position["position"]["szi"]) != 0.0:
+                                has_positions = True
+                                break
+                        
+                        if has_positions:
+                            active_traders.append(trader)
+                            
+                        # Progress indicator
+                        if (i + 1) % 50 == 0:
+                            print(f"   Checked {i + 1}/{len(all_traders)} traders, found {len(active_traders)} active")
+                            
+                    except Exception as e:
+                        print(f"   Error checking positions for {trader}: {e}")
+                        continue
+            
+            print(f"✅ Found {len(active_traders)} active traders with open positions")
+            return active_traders[:target_count]
+            
         except Exception as e:
-            print(f"Error connecting to leaderboard API: {e}")
+            print(f"Error fetching active traders: {e}")
             return []
     
     async def get_user_positions(self, session: aiohttp.ClientSession, address: str) -> Dict:
@@ -151,12 +186,13 @@ class HyperliquidBacktest:
     async def run_backtest(self, duration_hours: int = 24, interval_minutes: int = 5):
         """Run the backtest for specified duration"""
         print(f"Starting backtest for {duration_hours} hours with {interval_minutes} minute intervals")
-        print("Top 100 traders will be refreshed every hour to include new top performers")
+        print("📊 Tracking top 100 traders by PNL who have ACTIVE positions (filters out inactive accounts)")
+        print("🔄 Active trader list will be refreshed every hour")
         
-        # Get initial top traders
-        traders = await self.get_top_traders(100)
+        # Get initial top traders with active positions
+        traders = await self.get_top_traders_with_positions(100)
         if not traders:
-            print("Failed to get traders. Make sure the leaderboard API is running.")
+            print("Failed to get active traders. Make sure the leaderboard API is running.")
             return
         
         # Calculate number of iterations
@@ -168,10 +204,10 @@ class HyperliquidBacktest:
         for i in range(iterations):
             print(f"\nCollecting data point {i+1}/{iterations}")
             
-            # Refresh top 100 traders every hour (every 12 iterations at 5-min intervals)
+            # Refresh top 100 active traders every hour (every 12 iterations at 5-min intervals)
             if i % 12 == 0 and i > 0:
-                print("🔄 Refreshing top 100 traders list...")
-                new_traders = await self.get_top_traders(100)
+                print("🔄 Refreshing top 100 active traders list...")
+                new_traders = await self.get_top_traders_with_positions(100)
                 if new_traders:
                     # Compare with previous list
                     new_addresses = set(new_traders)
