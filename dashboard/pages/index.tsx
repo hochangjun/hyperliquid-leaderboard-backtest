@@ -121,8 +121,18 @@ export default function Dashboard() {
                     tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                     stroke="#9CA3AF"
                   />
-                  <YAxis yAxisId="price" orientation="left" stroke="#F59E0B" />
-                  <YAxis yAxisId="position" orientation="right" stroke="#10B981" />
+                  <YAxis 
+                    yAxisId="price" 
+                    orientation="left" 
+                    stroke="#F59E0B"
+                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                  />
+                  <YAxis 
+                    yAxisId="position" 
+                    orientation="right" 
+                    stroke="#10B981"
+                    tickFormatter={(value) => `$${(value / 1_000_000).toFixed(1)}M`}
+                  />
                   <Tooltip 
                     labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm')}
                     formatter={(value: any, name: string) => {
@@ -164,8 +174,18 @@ export default function Dashboard() {
                     tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                     stroke="#9CA3AF"
                   />
-                  <YAxis yAxisId="price" orientation="left" stroke="#8B5CF6" />
-                  <YAxis yAxisId="position" orientation="right" stroke="#EF4444" />
+                  <YAxis 
+                    yAxisId="price" 
+                    orientation="left" 
+                    stroke="#8B5CF6"
+                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                  />
+                  <YAxis 
+                    yAxisId="position" 
+                    orientation="right" 
+                    stroke="#EF4444"
+                    tickFormatter={(value) => `$${(value / 1_000_000).toFixed(1)}M`}
+                  />
                   <Tooltip 
                     labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm')}
                     formatter={(value: any, name: string) => {
