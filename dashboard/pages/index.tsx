@@ -149,6 +149,7 @@ export default function Dashboard() {
                     stroke="#F59E0B" 
                     name="BTC Price"
                     strokeWidth={2}
+                    dot={false}
                   />
                   <Line 
                     yAxisId="position" 
@@ -157,6 +158,7 @@ export default function Dashboard() {
                     stroke="#10B981" 
                     name="BTC Net Position"
                     strokeWidth={2}
+                    dot={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -178,7 +180,7 @@ export default function Dashboard() {
                   <YAxis 
                     yAxisId="price" 
                     orientation="left" 
-                    stroke="#8B5CF6"
+                    stroke="#3B82F6"
                     tickFormatter={(value) => `$${value.toLocaleString()}`}
                     domain={['dataMin - 100', 'dataMax + 100']}
                   />
@@ -200,9 +202,10 @@ export default function Dashboard() {
                     yAxisId="price" 
                     type="monotone" 
                     dataKey="eth_price" 
-                    stroke="#8B5CF6" 
+                    stroke="#3B82F6" 
                     name="ETH Price"
                     strokeWidth={2}
+                    dot={false}
                   />
                   <Line 
                     yAxisId="position" 
@@ -211,6 +214,7 @@ export default function Dashboard() {
                     stroke="#EF4444" 
                     name="ETH Net Position"
                     strokeWidth={2}
+                    dot={false}
                   />
                 </LineChart>
               </ResponsiveContainer>

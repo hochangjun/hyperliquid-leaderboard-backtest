@@ -178,7 +178,8 @@ class HyperliquidBacktest:
             "eth_positions": aggregated.get("ETH", {
                 "long_tokens": 0, "short_tokens": 0, "net_tokens": 0,
                 "long_usd": 0, "short_usd": 0, "net_usd": 0, "count": 0
-            })
+            }),
+            "trader_positions": positions  # Add individual trader positions
         }
         
         return data_point
