@@ -126,6 +126,7 @@ export default function Dashboard() {
                     orientation="left" 
                     stroke="#F59E0B"
                     tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    domain={['dataMin - 1000', 'dataMax + 1000']}
                   />
                   <YAxis 
                     yAxisId="position" 
@@ -179,6 +180,7 @@ export default function Dashboard() {
                     orientation="left" 
                     stroke="#8B5CF6"
                     tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    domain={['dataMin - 100', 'dataMax + 100']}
                   />
                   <YAxis 
                     yAxisId="position" 
