@@ -112,6 +112,13 @@ def get_traders():
             return jsonify({'error': 'Failed to fetch leaderboard'}), 500
         
         leaderboard_data = leaderboard_response.json()
+        
+        # Get latest data point to extract trader positions
+        data = get_latest_data()
+        latest_positions = {}
+        if data and 'trader_positions' in data[-1]:
+            latest_positions = data[-1]['trader_positions']
+        
         traders = []
         
         # Filter for traders with positive all-time PNL only
@@ -121,17 +128,23 @@ def get_traders():
             
             # Only include traders with positive PNL
             if pnl_alltime > 0:
+                eth_address = trader['ethAddress']
+                
+                # Get position data if available
+                position_data = latest_positions.get(eth_address, {})
+                btc_position = position_data.get('BTC@PERP', {})
+                eth_position = position_data.get('ETH@PERP', {})
+                
                 traders.append({
-                    'ethAddress': trader['ethAddress'],
+                    'ethAddress': eth_address,
                     'displayName': trader.get('displayName'),
                     'pnl_alltime': pnl_alltime,
                     'roi_alltime': float(alltime_stats.get('roi', 0)),
                     'account_value': float(trader.get('accountValue', 0)),
-                    # These would be fetched from individual position queries in production
-                    'btc_position': None,  # Would need individual API calls
-                    'eth_position': None,
-                    'btc_position_usd': None,
-                    'eth_position_usd': None,
+                    'btc_position': btc_position.get('szi', 0) if btc_position else 0,
+                    'eth_position': eth_position.get('szi', 0) if eth_position else 0,
+                    'btc_position_usd': btc_position.get('position_value_usd', 0) if btc_position else 0,
+                    'eth_position_usd': eth_position.get('position_value_usd', 0) if eth_position else 0,
                 })
         
         return jsonify(traders)
