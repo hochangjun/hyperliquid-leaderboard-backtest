@@ -10,12 +10,19 @@ export default async function handler(
 
   try {
     // Proxy to your backend API server
-    const apiServerUrl = process.env.API_SERVER_URL || 'http://YOUR_DIGITAL_OCEAN_IP:8000';
+    const apiServerUrl = process.env.API_SERVER_URL;
+    
+    if (!apiServerUrl || apiServerUrl.includes('YOUR_DIGITAL_OCEAN_IP')) {
+      console.log('API_SERVER_URL not configured properly');
+      // Return empty array to prevent frontend crash
+      return res.status(200).json([]);
+    }
     
     const response = await fetch(`${apiServerUrl}/api/traders`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch traders from backend');
+      console.error('Backend returned error:', response.status, response.statusText);
+      return res.status(200).json([]); // Return empty array instead of error
     }
 
     const traders = await response.json();
@@ -23,6 +30,7 @@ export default async function handler(
     res.status(200).json(traders);
   } catch (error) {
     console.error('Error fetching traders:', error);
-    res.status(500).json({ error: 'Failed to fetch traders' });
+    // Return empty array to prevent frontend crash
+    res.status(200).json([]);
   }
 }

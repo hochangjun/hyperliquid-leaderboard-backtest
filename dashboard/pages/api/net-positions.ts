@@ -10,18 +10,26 @@ export default async function handler(
 
   try {
     // Proxy to your backend API server
-    const apiServerUrl = process.env.API_SERVER_URL || 'http://YOUR_DIGITAL_OCEAN_IP:8000';
+    const apiServerUrl = process.env.API_SERVER_URL;
+    
+    if (!apiServerUrl || apiServerUrl.includes('YOUR_DIGITAL_OCEAN_IP')) {
+      console.log('API_SERVER_URL not configured properly');
+      // Return empty array to prevent frontend crash
+      return res.status(200).json([]);
+    }
     
     const response = await fetch(`${apiServerUrl}/api/net-positions`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch net positions from backend');
+      console.error('Backend returned error:', response.status, response.statusText);
+      return res.status(200).json([]); // Return empty array instead of error
     }
     
     const data = await response.json();
     res.status(200).json(data);
   } catch (error) {
     console.error('Error fetching net positions:', error);
-    res.status(500).json({ error: 'Failed to fetch net positions' });
+    // Return empty array to prevent frontend crash
+    res.status(200).json([]);
   }
 }
