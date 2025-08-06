@@ -112,27 +112,32 @@ export default function Dashboard() {
           {/* BTC Chart */}
           <div className="bg-gray-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">BTC: Price vs Net Positions</h2>
-            <div className="h-80">
+            <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={timeSeriesData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                   <XAxis 
                     dataKey="timestamp" 
-                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    tickFormatter={(value) => format(new Date(value), 'MM/dd HH:mm')}
                     stroke="#9CA3AF"
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis 
                     yAxisId="price" 
                     orientation="left" 
                     stroke="#F59E0B"
-                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                     domain={['dataMin - 1000', 'dataMax + 1000']}
+                    width={65}
                   />
                   <YAxis 
                     yAxisId="position" 
                     orientation="right" 
                     stroke="#10B981"
-                    tickFormatter={(value) => `$${(value / 1_000_000).toFixed(1)}M`}
+                    tickFormatter={(value) => `$${(value / 1_000_000).toFixed(0)}M`}
+                    width={65}
                   />
                   <Tooltip 
                     labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm')}
@@ -168,27 +173,32 @@ export default function Dashboard() {
           {/* ETH Chart */}
           <div className="bg-gray-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">ETH: Price vs Net Positions</h2>
-            <div className="h-80">
+            <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={timeSeriesData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                   <XAxis 
                     dataKey="timestamp" 
-                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    tickFormatter={(value) => format(new Date(value), 'MM/dd HH:mm')}
                     stroke="#9CA3AF"
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis 
                     yAxisId="price" 
                     orientation="left" 
                     stroke="#3B82F6"
-                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
                     domain={['dataMin - 100', 'dataMax + 100']}
+                    width={65}
                   />
                   <YAxis 
                     yAxisId="position" 
                     orientation="right" 
                     stroke="#EF4444"
-                    tickFormatter={(value) => `$${(value / 1_000_000).toFixed(1)}M`}
+                    tickFormatter={(value) => `$${(value / 1_000_000).toFixed(0)}M`}
+                    width={65}
                   />
                   <Tooltip 
                     labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm')}
